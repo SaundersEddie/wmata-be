@@ -4,6 +4,8 @@ import rateLimit from "express-rate-limit";
 import statusRouter from "./routes/status.js";
 import { startScheduler } from "./jobs/scheduler.js";
 
+import metroStatusRouter from "./routes/metroStatus.js";
+
 export function createServer() {
   const app = express();
 
@@ -21,6 +23,7 @@ export function createServer() {
 
   app.get("/health", (req, res) => res.json({ ok: true }));
   app.use("/api", statusRouter);
+  app.use("/api", metroStatusRouter);
 
   return {
     app,

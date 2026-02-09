@@ -1,12 +1,17 @@
+// src/jobs/refresh.js
 import { fetchIncidents } from "../services/wmataClient.js";
-import { normalizeIncidents } from "../services/transform.js";
+import { transformMetroIncidents } from "../services/transformMetro.js";
 import { setCache, markStale } from "../cache/memoryCache.js";
 
 export async function refreshOnce() {
   try {
     const raw = await fetchIncidents();
-    const normalized = normalizeIncidents(raw);
-    setCache(normalized);
+    const metro = transformMetroIncidents(raw);
+
+    setCache({
+      metro,
+    });
+
     return { ok: true };
   } catch (err) {
     markStale();

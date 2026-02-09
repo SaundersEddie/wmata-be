@@ -1,30 +1,38 @@
-import cron from "node-cron";
 import { refreshOnce } from "./refresh.js";
 
-function inCommuteHoursNY(date = new Date()) {
-  // Your machine is local; if you deploy elsewhere, you’d want TZ handling.
+function inCommuteHoursLocal(date = new Date()) {
   const h = date.getHours();
   return h >= 7 && h < 18;
 }
 
-export function startScheduler() {
-  // Run every minute; decide whether to actually refresh.
-  // Simple + reliable (no dynamic cron juggling).
-  let lastRan = 0;
+function getCadenceMs() {
+  return inCommuteHoursLocal() ? 60_000 : 5 * 60_000;
+}
 
-  cron.schedule("* * * * *", async () => {
-    const now = Date.now();
-    const cadenceMs = inCommuteHoursNY() ? 60_000 : 5 * 60_000;
+function jitter(ms) {
+  // +/- 10% jitter to avoid “on the minute” behavior
+  const delta = Math.floor(ms * 0.1);
+  const offset = Math.floor(Math.random() * (2 * delta + 1)) - delta;
+  return Math.max(5_000, ms + offset);
+}
 
-    if (now - lastRan < cadenceMs - 500) return;
+let running = false;
 
-    lastRan = now;
+async function tick() {
+  const cadence = jitter(getCadenceMs());
+
+  // Prevent overlap
+  if (!running) {
+    running = true;
     const result = await refreshOnce();
     if (!result.ok) console.warn("Refresh failed:", result.error);
-  });
+    running = false;
+  }
 
-  // Prime immediately on boot:
-  refreshOnce().then((r) => {
-    if (!r.ok) console.warn("Initial refresh failed:", r.error);
-  });
+  setTimeout(tick, cadence);
+}
+
+export function startScheduler() {
+  // Prime immediately, then loop
+  tick();
 }
