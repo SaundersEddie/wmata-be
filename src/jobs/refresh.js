@@ -1,15 +1,18 @@
-// src/jobs/refresh.js
-import { fetchIncidents } from "../services/wmataClient.js";
+import { fetchIncidents, fetchElevatorIncidents } from "../services/wmataClient.js";
 import { transformMetroIncidents } from "../services/transformMetro.js";
+import { transformAccessibility } from "../services/transformAccessibility.js";
 import { setCache, markStale } from "../cache/memoryCache.js";
 
 export async function refreshOnce() {
   try {
-    const raw = await fetchIncidents();
-    const metro = transformMetroIncidents(raw);
+    const [railRaw, accessRaw] = await Promise.all([
+      fetchIncidents(),
+      fetchElevatorIncidents(),
+    ]);
 
     setCache({
-      metro,
+      metro: transformMetroIncidents(railRaw),
+      accessibility: transformAccessibility(accessRaw),
     });
 
     return { ok: true };

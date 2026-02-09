@@ -5,6 +5,7 @@ import statusRouter from "./routes/status.js";
 import { startScheduler } from "./jobs/scheduler.js";
 
 import metroStatusRouter from "./routes/metroStatus.js";
+import accessibilityStatusRouter from "./routes/accessibilityStatus.js";
 
 export function createServer() {
   const app = express();
@@ -24,7 +25,8 @@ export function createServer() {
   app.get("/health", (req, res) => res.json({ ok: true }));
   app.use("/api", statusRouter);
   app.use("/api", metroStatusRouter);
-
+  app.use("/api", accessibilityStatusRouter);
+  
   return {
     app,
     start: () => startScheduler(),

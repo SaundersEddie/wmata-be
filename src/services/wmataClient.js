@@ -1,4 +1,3 @@
-// src/services/wmataClient.js
 import "dotenv/config";
 
 const BASE = "https://api.wmata.com";
@@ -9,8 +8,9 @@ function requireApiKey() {
   return key;
 }
 
-export async function fetchIncidents({ signal } = {}) {
-  const res = await fetch(`${BASE}/Incidents.svc/json/Incidents`, {
+async function getJson(path, { signal } = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "GET",
     headers: {
       api_key: requireApiKey(),
       "User-Agent": "wmata-be-demo/1.0 (portfolio)",
@@ -22,6 +22,13 @@ export async function fetchIncidents({ signal } = {}) {
     const text = await res.text().catch(() => "");
     throw new Error(`WMATA ${res.status} ${res.statusText}: ${text}`);
   }
-
   return res.json();
+}
+
+export function fetchIncidents(opts) {
+  return getJson("/Incidents.svc/json/Incidents", opts);
+}
+
+export function fetchElevatorIncidents(opts) {
+  return getJson("/Incidents.svc/json/ElevatorIncidents", opts);
 }
