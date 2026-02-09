@@ -9,7 +9,7 @@
     "start": "node server.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
-    "jest": {
+  "jest": {
     "testEnvironment": "node"
   },
   "keywords": [],
