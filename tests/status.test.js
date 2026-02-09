@@ -10,6 +10,10 @@ describe("GET /api/status", () => {
       .get("/Incidents.svc/json/Incidents")
       .reply(200, { Incidents: [] });
 
+    nock("https://api.wmata.com")
+      .get("/Incidents.svc/json/ElevatorIncidents")
+      .reply(200, { ElevatorIncidents: [] });
+
     const { app, start } = createServer();
     start();
 
@@ -23,5 +27,8 @@ describe("GET /api/status", () => {
     expect(res.body.data).not.toBeNull();
     expect(res.body.data).toHaveProperty("metro");
     expect(Array.isArray(res.body.data.metro.lines)).toBe(true);
+
+    expect(res.body.data).toHaveProperty("accessibility");
+    expect(res.body.data.accessibility).toHaveProperty("totalDown");
   });
 });
