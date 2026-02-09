@@ -1,15 +1,19 @@
+// src/services/wmataClient.js
 import "dotenv/config";
 
 const BASE = "https://api.wmata.com";
 
-export async function fetchIncidents({ signal } = {}) {
-  const url = `${BASE}/Incidents.svc/json/Incidents`;
+function requireApiKey() {
+  const key = process.env.WMATA_API_KEY;
+  if (!key) throw new Error("WMATA_API_KEY is missing");
+  return key;
+}
 
-  const res = await fetch(url, {
-    method: "GET",
+export async function fetchIncidents({ signal } = {}) {
+  const res = await fetch(`${BASE}/Incidents.svc/json/Incidents`, {
     headers: {
-      api_key: process.env.WMATA_API_KEY,
-      "User-Agent": "wmata-be-demo/1.0 (portfolio project)",
+      api_key: requireApiKey(),
+      "User-Agent": "wmata-be-demo/1.0 (portfolio)",
     },
     signal,
   });
