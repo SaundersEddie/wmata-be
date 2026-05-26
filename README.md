@@ -16,7 +16,7 @@ Avoid excessive upstream polling via caching
 
 Be fully testable and frontend-agnostic
 
-Features
+Features  
 🚆 Rail (Metro) Status
 
 Aggregates WMATA rail incidents
@@ -203,22 +203,15 @@ npm test
 
 Test coverage includes:
 
-WMATA client behavior
+-- WMATA client behavior  
+-- Metro transform logic  
+-- Accessibility transform logic  
+-- API status endpoints  
+-- All external API calls are mocked.  
 
-Metro transform logic
-
-Accessibility transform logic
-
-API status endpoints
-
-All external API calls are mocked.
-
-Environment Variables
-
-Create a .env file:
-
+Environment Variables  
+-- Create a .env file:  
 WMATA_API_KEY=your_key_here
-
 
 The API key is never exposed to the frontend.
 
