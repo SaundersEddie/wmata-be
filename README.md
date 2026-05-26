@@ -1,97 +1,130 @@
-WMATA Status Backend
+# WMATA Status Backend
 
-A Node.js / Express backend that aggregates, normalizes, and caches Washington Metro (WMATA) service data into a clean, frontend-friendly API.
+A Node.js / Express backend that fetches Washington Metro (WMATA) service data, normalizes it, caches it, and exposes a cleaner API for frontend use.
 
-This project is a concept / portfolio application designed to demonstrate backend architecture, API integration, data transformation, caching, and testing — not a production proxy service.
+This is a portfolio project focused on backend API design, external API integration, data transformation, caching, testing, and frontend-friendly response contracts.
 
-Goals
+It is **not** intended to be a public production WMATA proxy service.
 
-Consume WMATA APIs safely without exposing API keys
+---
 
-Normalize noisy, inconsistent upstream data into a stable contract
+## What This Project Does
 
-Add real commuter value (severity, summaries, accessibility context)
+The WMATA Status Backend sits between the WMATA APIs and a frontend application.
 
-Avoid excessive upstream polling via caching
+Instead of exposing raw WMATA responses directly, this backend:
 
-Be fully testable and frontend-agnostic
+- Fetches rail incident and accessibility outage data from WMATA
+- Normalizes inconsistent upstream data into predictable API responses
+- Groups rail incidents by Metro line
+- Classifies service impact and severity
+- Separates service-impacting incidents from informational alerts
+- Aggregates elevator and escalator outages
+- Caches responses to avoid unnecessary upstream API calls
+- Keeps the WMATA API key safely on the backend
+- Provides clean endpoints for a frontend to consume
 
-Features  
-🚆 Rail (Metro) Status
+The goal is to turn noisy transit data into something easier to display, test, and understand.
 
-Aggregates WMATA rail incidents
+---
 
-Groups by line (Red, Blue, Green, etc.)
+## Why I Built It
 
-Assigns severity:
+Raw public API data is often useful, but not always frontend-friendly.
 
-Normal
+WMATA service data can be verbose, inconsistent, and awkward to present directly in a user interface. This backend adds a transform layer so the frontend can work with a stable, simplified contract instead of handling all cleanup and classification itself.
 
-Minor
+This project demonstrates:
 
-Major
+- Backend API design
+- Third-party API integration
+- Environment-based configuration
+- Data normalization
+- In-memory caching
+- Response shaping for frontend use
+- Unit and integration testing
+- Mocked external API calls
 
-Separates:
+---
 
-Service-impacting incidents
+## Features
 
-Informational alerts
+### Rail Status
 
-Generates short, UI-ready summaries
+The rail status endpoint aggregates WMATA rail incident data and prepares it for UI use.
 
-Cleans and truncates long WMATA descriptions
+It supports:
 
-♿ Accessibility (Elevators & Escalators)
+- Rail incident aggregation
+- Grouping by Metro line
+- Severity assignment:
+  - `Normal`
+  - `Minor`
+  - `Major`
+- Separation of:
+  - Service-impacting incidents
+  - Informational alerts
+- Short UI-ready summaries
+- Cleaned and truncated descriptions
+- Frontend-friendly response objects
 
-Aggregates elevator and escalator outages
+### Accessibility Status
 
-Counts:
+The accessibility endpoint aggregates elevator and escalator outage data.
 
-elevators down
+It supports:
 
-escalators down
+- Elevator outage counts
+- Escalator outage counts
+- Total outage counts
+- Planned vs unplanned outage classification
+- Readable summaries including:
+  - Station name
+  - Location
+  - Issue description
+- Sorting to prioritize unplanned and recently updated outages
 
-total outages
+### Caching
 
-Classifies outages as:
+The backend refreshes WMATA data on a managed timer loop and serves cached data to the frontend.
 
-planned (modernization, inspections, preventive maintenance)
+This helps:
 
-unplanned (unexpected service interruptions)
+- Avoid exposing the WMATA API key
+- Reduce unnecessary upstream API calls
+- Prevent overlapping refresh jobs
+- Support a stale flag if refresh fails
+- Keep the frontend fast and simple
 
-Produces readable summaries combining station, location, and issue
+---
 
-Sorted to prioritize unplanned and recently updated outages
+## API Endpoints
 
-🧠 Smart Caching
+### Health Check
 
-Backend polls WMATA on a timed loop (not cron)
-
-Cached results served to frontend
-
-Prevents:
-
-API key exposure
-
-upstream rate abuse
-
-Supports “stale” flag if refresh fails
-
-API Endpoints
-Health Check
+```http
 GET /health
+```
 
+Example response:
 
-Returns:
+```json
+{
+  "ok": true
+}
+```
 
-{ "ok": true }
+---
 
-Rail Status
+### Metro Rail Status
+
+```http
 GET /api/status/metro
+```
 
+Example response shape:
 
-Response (example):
-
+```json
 {
   "meta": {
     "lastUpdated": "2026-02-09T16:43:48.214Z",
@@ -117,13 +150,19 @@ Response (example):
     ]
   }
 }
+```
 
-Accessibility Status
+---
+
+### Accessibility Status
+
+```http
 GET /api/status/accessibility
+```
 
+Example response shape:
 
-Response (example):
-
+```json
 {
   "meta": {
     "lastUpdated": "2026-02-09T16:43:48.214Z",
@@ -146,79 +185,172 @@ Response (example):
     ]
   }
 }
+```
 
-Architecture Overview
+---
+
+## Architecture
+
+```text
 WMATA APIs
    ↓
-wmataClient
+WMATA Client
    ↓
 Transform Layer
    - classification
    - summaries
-   - hygiene
+   - response hygiene
    ↓
 In-Memory Cache
    ↓
 Express API
+   ↓
+Frontend Application
+```
 
-Why a transform layer?
+### Why Use a Transform Layer?
 
-WMATA data is:
+The backend intentionally does more than proxy WMATA data.
 
-verbose
+The transform layer exists because upstream data is not always ideal for direct UI use. It gives the frontend a cleaner contract and keeps presentation logic out of the client where possible.
 
-inconsistent
+The transform layer handles:
 
-not UI-friendly
+- Classification
+- Severity assignment
+- Summary generation
+- Data cleanup
+- Response shaping
+- Frontend-friendly grouping
 
-This backend intentionally adds value instead of acting as a dumb proxy.
+---
 
-Scheduling Strategy
+## Tech Stack
 
-Uses a self-managed setTimeout loop (not cron)
+- Node.js
+- Express
+- ES Modules
+- Native `fetch`
+- dotenv
+- helmet
+- express-rate-limit
+- Jest
+- Nock
+- Supertest
+- In-memory cache
 
-Prevents overlapping refreshes
+---
 
-Adjusts cadence based on time of day
+## Local Setup
 
-Resilient to process pauses and local development quirks
+Install dependencies:
 
-Tech Stack
+```bash
+npm install
+```
 
-Node.js (ES Modules)
+Create a local environment file:
 
-Express
+```bash
+cp .env.example .env
+```
 
-Native fetch
+Add your WMATA API key:
 
-Jest (unit + integration tests)
+```env
+WMATA_API_KEY=your_key_here
+```
 
-Nock (HTTP mocking)
+Start the development server:
 
-In-memory cache (no persistence)
+```bash
+npm run dev
+```
 
-Testing
+Run the production start command:
+
+```bash
+npm start
+```
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---:|---|
+| `WMATA_API_KEY` | Yes | WMATA API key used by the backend to request service data. |
+
+The API key is used only on the backend and should never be exposed to the frontend.
+
+---
+
+## Testing
+
+Run the test suite:
+
+```bash
 npm test
-
+```
 
 Test coverage includes:
 
--- WMATA client behavior  
--- Metro transform logic  
--- Accessibility transform logic  
--- API status endpoints  
--- All external API calls are mocked.  
+- WMATA client behavior
+- Metro transform logic
+- Accessibility transform logic
+- API status endpoints
+- Mocked external API responses
 
-Environment Variables  
--- Create a .env file:  
-WMATA_API_KEY=your_key_here
+External WMATA calls are mocked during tests.
 
-The API key is never exposed to the frontend.
+---
 
-Scope & Intent
+## Scripts
 
-This project is not intended for public production use
+| Command | Description |
+|---|---|
+| `npm run dev` | Starts the development server with nodemon. |
+| `npm start` | Starts the backend with Node. |
+| `npm test` | Runs the Jest test suite. |
 
-No data is persisted
+---
 
-Designed to showcase backend engineering practices and patterns
+## Project Scope
+
+This project is designed as a portfolio/backend architecture example.
+
+It is intended to demonstrate clean backend patterns, not to act as a public production service.
+
+Current scope:
+
+- No persistent database
+- No user accounts
+- No public production guarantee
+- No long-term historical storage
+- In-memory cache only
+- Frontend-agnostic API responses
+
+---
+
+## Related Repositories
+
+- Backend: `https://github.com/SaundersEddie/wmata-be`
+- Frontend: `https://github.com/SaundersEddie/wmata-fe`
+
+---
+
+## Portfolio Notes
+
+This project is useful as a portfolio piece because it shows more than basic CRUD.
+
+It demonstrates how to:
+
+- Work with third-party APIs
+- Hide API keys behind a backend
+- Normalize messy upstream data
+- Design stable response contracts
+- Add caching around external data
+- Test backend logic without relying on live external services
+- Build a backend that supports a separate frontend cleanly
+
+That is the point of the project: not just fetching data, but making the data easier to use.
